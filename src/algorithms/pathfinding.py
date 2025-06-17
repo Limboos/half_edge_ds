@@ -5,8 +5,7 @@ import math
 import random
 from typing import List, Dict, Optional, Tuple
 
-from ..core.half_edge_ds import HalfEdge, Vertex
-from ..core.half_edge import neighbours
+from ..core.half_edge_ds import HalfEdge, Vertex, neighbours
 
 def sort(edges: List[HalfEdge]) -> List[HalfEdge]:
     """

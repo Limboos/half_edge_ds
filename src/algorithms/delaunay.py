@@ -1,5 +1,6 @@
-from HALF_EDGE.Turtle_drawing import *
-from HALF_EDGE.half_edge import *
+"""
+Delaunay triangulation implementation for Half-Edge data structures.
+"""
 import numpy as np
 from scipy.spatial import Delaunay
 import pandas as pd
@@ -7,8 +8,10 @@ import matplotlib.pyplot as plt
 import turtle
 import tkinter
 import logging
+import random
 from typing import List, Tuple, Optional
-from ..core.half_edge import HalfEdge, Vertex, Face, Fast_splice, verify_connectivity
+
+from ..core.half_edge_ds import HalfEdge, Vertex, Splice, neighbours, MakeEdge
 
 logger = logging.getLogger(__name__)
 

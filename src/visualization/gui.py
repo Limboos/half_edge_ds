@@ -5,7 +5,8 @@ Provides interactive visualization capabilities using PyQt.
 from typing import List, Optional, Tuple
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                             QHBoxLayout, QPushButton, QLabel, QSpinBox,
-                            QComboBox, QMessageBox, QToolBar, QStatusBar)
+                            QComboBox, QMessageBox, QToolBar, QStatusBar,
+                            QGroupBox)
 from PyQt6.QtCore import Qt, QPointF, pyqtSignal
 from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QAction, QIcon
 import logging
@@ -52,7 +53,7 @@ class HalfEdgeCanvas(QWidget):
             end = edge.S.V.getxy()
             
             # Set pen style based on edge type
-            if edge == self.selected_edge:
+            if edge == self.selected_edge or edge.S == self.selected_edge:
                 pen = QPen(QColor(255, 0, 0))  # Red for selected edge
                 pen.setWidth(3)
             else:
@@ -63,6 +64,17 @@ class HalfEdgeCanvas(QWidget):
             painter.drawLine(
                 int(start[0]), int(start[1]),
                 int(end[0]), int(end[1])
+            )
+
+            # Draw edge ID
+            mid_x = (start[0] + end[0]) / 2
+            mid_y = (start[1] + end[1]) / 2
+            painter.setPen(QPen(QColor(0, 128, 0)))  # Dark green for edge IDs
+            painter.setFont(QFont('Arial', 8, QFont.Weight.Bold))
+            painter.drawText(
+                int(mid_x),
+                int(mid_y),
+                str(edge.id)
             )
 
         # Draw vertices
@@ -80,8 +92,8 @@ class HalfEdgeCanvas(QWidget):
             painter.drawEllipse(QPointF(pos[0], pos[1]), 5, 5)
             
             # Draw vertex ID
-            painter.setPen(QPen(QColor(0, 0, 0)))
-            painter.setFont(QFont('Arial', 10))
+            painter.setPen(QPen(QColor(128, 0, 128)))  # Purple for vertex IDs
+            painter.setFont(QFont('Arial', 10, QFont.Weight.Bold))
             painter.drawText(
                 int(pos[0] + 10),
                 int(pos[1] - 10),
@@ -192,6 +204,26 @@ class MainWindow(QMainWindow):
         mode_combo.currentTextChanged.connect(self.change_mode)
         control_layout.addWidget(mode_combo)
 
+        # Add navigation group
+        nav_group = QGroupBox("Edge Navigation")
+        nav_layout = QVBoxLayout()
+        
+        # Add navigation buttons
+        next_btn = QPushButton("Next Edge")
+        next_btn.clicked.connect(self.next_edge)
+        nav_layout.addWidget(next_btn)
+        
+        prev_btn = QPushButton("Previous Edge")
+        prev_btn.clicked.connect(self.prev_edge)
+        nav_layout.addWidget(prev_btn)
+        
+        sym_btn = QPushButton("Symmetric Edge")
+        sym_btn.clicked.connect(self.sym_edge)
+        nav_layout.addWidget(sym_btn)
+        
+        nav_group.setLayout(nav_layout)
+        control_layout.addWidget(nav_group)
+
         # Add buttons
         add_random_btn = QPushButton("Add Random Vertex")
         add_random_btn.clicked.connect(self.add_random_vertex)
@@ -205,14 +237,14 @@ class MainWindow(QMainWindow):
         clear_btn.clicked.connect(self.clear_all)
         control_layout.addWidget(clear_btn)
 
+        # Connect signals
+        self.canvas.vertex_added.connect(self.on_vertex_added)
+        self.canvas.edge_selected.connect(self.on_edge_selected)
+
         # Add status bar
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
         self.statusBar.showMessage("Ready")
-
-        # Connect signals
-        self.canvas.vertex_added.connect(self.on_vertex_added)
-        self.canvas.edge_selected.connect(self.on_edge_selected)
 
     def change_mode(self, mode: str) -> None:
         """Change the drawing mode."""
@@ -264,6 +296,27 @@ class MainWindow(QMainWindow):
         self.statusBar.showMessage(
             f"Selected edge {edge.id}: {edge.V.Vertex_id} -> {edge.S.V.Vertex_id}"
         )
+
+    def next_edge(self) -> None:
+        """Navigate to the next edge."""
+        if self.canvas.selected_edge:
+            self.canvas.selected_edge = self.canvas.selected_edge.Next
+            self.canvas.update()
+            self.statusBar.showMessage(f"Selected edge: {self.canvas.selected_edge.id}")
+
+    def prev_edge(self) -> None:
+        """Navigate to the previous edge."""
+        if self.canvas.selected_edge:
+            self.canvas.selected_edge = self.canvas.selected_edge.Prev
+            self.canvas.update()
+            self.statusBar.showMessage(f"Selected edge: {self.canvas.selected_edge.id}")
+
+    def sym_edge(self) -> None:
+        """Navigate to the symmetric edge."""
+        if self.canvas.selected_edge:
+            self.canvas.selected_edge = self.canvas.selected_edge.Sym()
+            self.canvas.update()
+            self.statusBar.showMessage(f"Selected edge: {self.canvas.selected_edge.id}")
 
 def run_visualization(vertices: List[Vertex], edges: List[HalfEdge]) -> None:
     """Run the visualization application."""
